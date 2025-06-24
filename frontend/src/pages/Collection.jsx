@@ -14,33 +14,33 @@ const Collection = () => {
   const [sortType, setSortType] = useState('relevant');
 
   const toggleCategory = (e) => {
-    if(category.includes(e.target.value)){
+    if (category.includes(e.target.value)) {
       setCategory(prev => prev.filter(item => item !== e.target.value))
-     }
-     else{
+    }
+    else {
       setCategory(prev => [...prev, e.target.value])
-     }
+    }
 
   }
 
   const toggleSubCategory = (e) => {
-    if(subCategory.includes(e.target.value)){
+    if (subCategory.includes(e.target.value)) {
       setSubCategory(prev => prev.filter(item => item !== e.target.value));
     }
-    else{
+    else {
       setSubCategory(prev => [...prev, e.target.value]);
     }
   }
 
   const sortProduct = () => {
     let fpCopy = filterProducts.slice();
-    switch(sortType){
+    switch (sortType) {
       case 'low-high':
-        setFilterProducts(fpCopy.sort((a,b) => (a.price - b.price)));
+        setFilterProducts(fpCopy.sort((a, b) => (a.price - b.price)));
         break;
 
       case 'high-low':
-        setFilterProducts(fpCopy.sort((a,b) => (b.price - a.price)));
+        setFilterProducts(fpCopy.sort((a, b) => (b.price - a.price)));
         break;
 
       default:
@@ -54,31 +54,31 @@ const Collection = () => {
     setFilterProducts(products);
   }, [])
 
-  
+
   useEffect(() => {
     applyFilter();
 
-  },[category, subCategory, search, showSearch, products]);
+  }, [category, subCategory, search, showSearch, products]);
 
   useEffect(() => {
     sortProduct();
 
-  },[sortType]);
+  }, [sortType]);
 
   const applyFilter = () => {
     let productsCopy = products.slice();
-    if(showSearch && search){
+    if (showSearch && search) {
       productsCopy = productsCopy.filter(item => item.name.toLowerCase().includes(search.toLowerCase()))
     }
 
 
-    if(category.length > 0){
+    if (category.length > 0) {
       productsCopy = productsCopy.filter(item => category.includes(item.category));
     }
-    if(subCategory.length > 0){
+    if (subCategory.length > 0) {
       productsCopy = productsCopy.filter(item => subCategory.includes(item.subCategory));
     }
-    
+
     setFilterProducts(productsCopy);
   }
 
@@ -146,7 +146,7 @@ const Collection = () => {
               <ProductItem key={index} name={item.name} id={item._id} price={item.price} image={item.image} />
 
             ))
-        }
+          }
 
         </div>
       </div>

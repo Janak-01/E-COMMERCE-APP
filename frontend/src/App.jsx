@@ -15,6 +15,8 @@ import Footer from './components/Footer';
 import SearchBar from './components/SearchBar';
 import { ToastContainer } from 'react-toastify';
 import Verify from './pages/Verify';
+import ProtectedRoute from './components/ProtectedRoute';
+import NotFoundPage from './components/NotFound'
 //import Navbar from '../../components/Navbar';
 
 const App = () => {
@@ -24,17 +26,25 @@ const App = () => {
       <Navbar />
       <SearchBar />
       <Routes>
-        <Route path='/' element={<Home/>}/>
-        <Route path='/collection' element={<Collection/>}/>
+
+        {/* public pages */}
+        <Route path='/login' element={<Login/>}/>
         <Route path='/about' element={<About/>}/>
         <Route path='/contact' element={<Contact/>}/>
+        <Route path='/collection' element={<Collection/>}/>
         <Route path='/product/:productId' element={<Product/>}/>
-        <Route path='/cart' element={<Cart/>}/>
-        <Route path='/login' element={<Login/>}/>
-        <Route path='/place-order' element={<PlaceOrder/>}/>
-        <Route path='/orders' element={<Orders/>}/>
-        <Route path='/verify' element={<Verify/>}/>
 
+
+        {/* Protected Pages */}
+
+        <Route path='/' element={<ProtectedRoute><Home/></ProtectedRoute>}/>
+        <Route path='/cart' element={<ProtectedRoute><Cart/></ProtectedRoute>}/>
+
+        <Route path='/place-order' element={<ProtectedRoute><PlaceOrder/></ProtectedRoute>}/>
+        <Route path='/orders' element={<ProtectedRoute><Orders/></ProtectedRoute>}/>
+        <Route path='/verify' element={<ProtectedRoute><Verify/></ProtectedRoute>}/>
+
+       <Route path='*' element={<NotFoundPage />} /> 
       </Routes>
       <Footer/>
 

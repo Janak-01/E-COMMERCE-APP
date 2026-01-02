@@ -3,12 +3,12 @@ import { useParams } from 'react-router-dom';
 import { ShopContext } from '../context/ShopContext';
 import { assets } from '../assets/assets';
 import RelatedProducts from '../components/RelatedProducts';
-
+import { Link } from 'react-router-dom';
 const Product = () => {
   const { productId } = useParams();
   const { products, currency, addToCart } = useContext(ShopContext);
 
-
+  const isLoggedIn = localStorage.getItem('token') ? true : false;
   const [productData, setProductData] = useState(false);
   const [image, setImage] = useState('');
   const [size, setSize] = useState('');
@@ -74,8 +74,22 @@ const Product = () => {
             </div>
           </div>
 
-          <button onClick={() => addToCart(productData._id, size)} className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700 cursor-pointer'>ADD TO CART</button>
-          <hr className='mt-8 sm:w-4/5' />
+          {isLoggedIn ? (
+            <><button onClick={() => addToCart(productData._id, size)} className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700 cursor-pointer'>ADD TO CART</button>
+          <hr className='mt-8 sm:w-4/5' /> </>
+        ) : (
+            <Link
+              to="/login" // Link to your login page
+              className='block' // Ensures the Link can contain the full button style
+            >
+              <button
+                className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700 cursor-pointer w-full'
+              >
+                LOGIN TO ADD TO CART
+              </button>
+            </Link>
+          )
+          }
           <div className='text-sm text-gray-500 mt-5 flex flex-col gap1'>
             <p>100% Original Product.</p>
             <p>Cash on delivery is avaliable on this product.</p>

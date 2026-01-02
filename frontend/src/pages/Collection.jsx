@@ -140,7 +140,8 @@ const Collection = () => {
           </select>
         </div>
         {/* Map Products */}
-        <div className='grid grid-cols-2 md:grid-cols-3  ls:grid-cols-4 gap4 gap-y-6'>
+
+        {/* <div className='grid grid-cols-2 md:grid-cols-3  ls:grid-cols-4 gap4 gap-y-6'>
           {
             filterProducts.map((item, index) => (
               <ProductItem key={index} name={item.name} id={item._id} price={item.price} image={item.image} />
@@ -148,7 +149,27 @@ const Collection = () => {
             ))
           }
 
+        </div> */}
+
+        <div className='grid grid-cols-2 md:grid-cols-3  ls:grid-cols-4 gap4 gap-y-6'>
+          {filterProducts.length === 0 ? (
+            <div className='col-span-4 text-center py-20'>
+              <h2 className='text-2xl font-semibold text-gray-700 mb-3'>
+                No Products Found
+              </h2>
+              <p className='text-gray-500'>
+                Try adjusting your search terms or clearing the filters.
+              </p> </div>
+
+          ):(
+            filterProducts.map((item, index) => (
+              <ProductItem key={index} name={item.name} id={item._id} price={item.price} image={item.image} />
+            ))
+          )
+
+          }
         </div>
+
       </div>
 
     </div>

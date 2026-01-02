@@ -12,6 +12,15 @@ const PlaceOrder = () => {
   const [method, setMethod] = useState('cod');
   const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
 
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -32,42 +41,187 @@ const PlaceOrder = () => {
     setFormData(data => ({ ...data, [name]: value }))
   }
 
-  const initPay = (order) => {
+  // const initPay = async (order) => {
+  //   const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+
+  //   if (!res) {
+  //     toast.error("Razorpay SDK Failed to load. are you online? ");
+  //     return;
+  //   }
+
+  //   const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+  //   if (!keyId) {
+  //     toast.error("Razorpay Key ID is missing from environment variables!");
+  //     console.error("VITE_RAZORPAY_KEY_ID is missing.");
+  //     return;
+  //   }
+
+
+
+  //   const options = {
+  //     key: keyId,
+  //     amount: order.amount,
+  //     currency: order.currency,
+  //     name: 'Order Payment',
+  //     description: 'Order Payment',
+  //     order_id: order.id,
+
+  //     handler: async (response) => {
+  //       try {
+  //         const payload = {
+  //           razorpay_payment_id: response.razorpay_payment_id,
+  //           razorpay_order_id: response.razorpay_order_id,
+  //           razorpay_signature: response.razorpay_signature,
+  //           userId: localStorage.getItem("userId") // or from context
+  //         };
+
+  //         const { data } = await axios.post(
+  //           backendUrl + '/api/order/verifyRazorpay',
+  //           payload,
+  //           { headers: { token } }
+  //         );
+
+  //         if (data.success) {
+  //           toast.success("Payment successful");
+  //           setCartItems({});
+  //           navigate('/orders');
+  //         } else {
+  //           toast.error("Payment verification failed");
+  //         }
+
+  //       } catch (error) {
+  //         console.error(error);
+  //         toast.error("Payment verification failed");
+  //       }
+  //     },
+
+
+  //     modal: {
+  //       ondismiss: async () => {
+  //         console.log("Razorpay checkout modal dismissed by user.");
+
+  //         try {
+  //           await axios.post(
+  //             backendUrl + '/api/order/deletePending',
+  //             { orderId: order.receipt },
+  //             { headers: { token } }
+  //           );
+  //           toast.info("Payment cancelled. Pending order deleted.");
+  //         } catch (error) {
+  //           console.error("Failed to delete pending order:", error);
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   try {
+  //     console.log("Checkout options:", {
+  //       amount: order.amount,
+  //       currency: order.currency,
+  //       order_id: order.id
+  //     });
+  //     const rzp = new window.Razorpay(options);
+  //     rzp.open();
+  //   } catch (error) {
+  //     // This will catch the 'is not a constructor' error if the key is bad/missing
+  //     console.error("Razorpay Constructor Error:", error);
+  //     toast.error("Payment gateway failed to start. Check your API Key ID.");
+  //   }
+
+  // };
+
+
+  const initPay = async (order) => {
+    const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+
+    if (!res) {
+      toast.error("Razorpay SDK failed to load");
+      return;
+    }
+
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: order.amount,
       currency: order.currency,
-      name: 'Order Payment',
-      description: 'Order Payment',
+      name: "Your Store",
+      description: "Order Payment",
       order_id: order.id,
-      receipt: order.receipt,
-      handler: async (response) => {
-        console.log(response)
-        try {
-          const { data } = await axios.post(backendUrl + '/api/order/verifyRazorpay', response, { headers: { token } })
 
-          if (data.success) {
-            navigate('/orders')
-            setCartItems({})
+      config: {
+        display: {
+          blocks: {
+            banks: {
+              name: 'All payment methods',
+              instruments: [
+                {
+                  method: 'card',
+                  issuers: ['HDFC', 'ICIC', 'UTIB']  // Indian banks
+                },
+                {
+                  method: 'netbanking'
+                }
+              ]
+            }
+          },
+          sequence: ['block.banks'],
+          preferences: {
+            show_default_blocks: true
           }
-
-        } catch (error) {
-          console.log(error)
-          toast.error(error)
-
-
         }
-      }
+      },
 
-    }
+      handler: async function (response) {
+        console.log("Payment successful:", response);
+
+        try {
+          const verifyRes = await axios.post(
+            backendUrl + '/api/order/verifyRazorpay',
+            {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            },
+            { headers: { token } }
+          );
+
+          if (verifyRes.data.success) {
+            toast.success("Payment verified!");
+            setCartItems({});
+            navigate('/orders');
+          } else {
+            toast.error("Payment verification failed");
+          }
+        } catch (error) {
+          console.error("Verification error:", error);
+          toast.error(error.message);
+        }
+      },
+
+      prefill: {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        contact: formData.phone
+      },
+
+      notes: {
+        address: `${formData.street}, ${formData.city}`
+      },
+
+      theme: {
+        color: "#3399cc"
+      }
+    };
 
     const rzp = new window.Razorpay(options);
-    rzp.open()
 
+    rzp.on('payment.failed', function (response) {
+      console.error("Payment failed:", response.error);
+      alert(`Payment Failed: ${response.error.description}\nReason: ${response.error.reason}`);
+      toast.error(response.error.description);
+    });
+
+    rzp.open();
   };
-
-
-
 
 
   const onSubmitHandler = async (event) => {
@@ -88,6 +242,14 @@ const PlaceOrder = () => {
           }
         }
       }
+
+      if (orderItems.length === 0) {
+        toast.error("Your cart is empty. Please add items before placing an order.");
+        // OPTIONAL: Navigate back to the cart page
+        // navigate('/cart'); 
+        return; // STOP execution if the cart is empty
+      }
+
       //console.log(orderItems);
       let orderData = {
         address: formData,
@@ -126,30 +288,24 @@ const PlaceOrder = () => {
           break;
 
         case 'razorpay': {
-          const responseRazorpay = await axios.post(backendUrl + '/api/order/razorpay', orderData, { headers: { token } })
-          if (responseRazorpay.data.success) {
-            initPay(responseRazorpay.data.order)
+          try {
+            const responseRazorpay = await axios.post(
+              backendUrl + '/api/order/razorpay',
+              orderData,
+              { headers: { token } }
+            );
 
-          }
-
-        }
-          break;
-
-        case 'phonepe': {
-          const response = await axios.post(backendUrl + '/api/order/phonepe', orderData, {
-            headers: { token }
-          });
-
-          if (response.data.success) {
-            window.location.href = response.data.paymentUrl;
-          } else {
-            toast.error("PhonePe payment init failed");
+            if (responseRazorpay.data.success) {
+              initPay(responseRazorpay.data.order);
+            } else {
+              toast.error(responseRazorpay.data.message);
+            }
+          } catch (error) {
+            console.error("Order creation error:", error);
+            toast.error(error.response?.data?.message || "Failed to create order");
           }
         }
           break;
-
-
-
 
         default:
           break;
@@ -214,13 +370,6 @@ const PlaceOrder = () => {
             <div onClick={() => setMethod('razorpay')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
               <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'razorpay' ? 'bg-green-400' : ''}`}></p>
               <img className='h-5 mx-4' src={assets.razorpay_logo} alt="" />
-            </div>
-
-            {/* PhonePay */}
-
-            <div onClick={() => setMethod('phonepe')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
-              <p className={`min-w-3.5 h-3.5 border rounded-full ${method === 'phonepe' ? 'bg-green-400' : ''}`}></p>
-              <img className='h-5 mx-4' src={assets.phonepe_logo} alt="" />
             </div>
 
             <div onClick={() => setMethod('cod')} className='flex items-center gap-3 border p-2 px-3 cursor-pointer'>
